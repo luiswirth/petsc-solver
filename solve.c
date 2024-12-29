@@ -1,54 +1,38 @@
 #include <slepceps.h>
 
+
 static char help[] = "Generalized Hermitian Eigenvalue Problem (GHEP).\n";
 
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   ierr = SlepcInitialize(&argc,&argv,(char*)0,help); if (ierr) return ierr;
 
-  PetscInt n = 30;
-  ierr = PetscOptionsGetInt(NULL,NULL,"-n",&n,NULL); CHKERRQ(ierr);
+  char fileA[PETSC_MAX_PATH_LEN], fileB[PETSC_MAX_PATH_LEN];
+  PetscBool setA = PETSC_FALSE, setB = PETSC_FALSE;
+
+  ierr = PetscOptionsGetString(NULL, NULL, "-fileA", fileA, sizeof(fileA), &setA); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, NULL, "-fileB", fileB, sizeof(fileB), &setB); CHKERRQ(ierr);
+
+  if (!setA || !setB) {
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_USER, "Please provide the `-fileA` and `-fileB` options.");
+  }
 
   Mat A;
-  ierr = MatCreate(PETSC_COMM_WORLD,&A); CHKERRQ(ierr);
-  ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n); CHKERRQ(ierr);
+  PetscViewer viewerA;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, fileA, FILE_MODE_READ, &viewerA); CHKERRQ(ierr);
+  ierr = MatCreate(PETSC_COMM_WORLD, &A); CHKERRQ(ierr);
   ierr = MatSetFromOptions(A); CHKERRQ(ierr);
-  ierr = MatSetUp(A); CHKERRQ(ierr);
-
-  PetscInt Istart, Iend;
-  ierr = MatGetOwnershipRange(A,&Istart,&Iend); CHKERRQ(ierr);
-  for (PetscInt i = Istart; i < Iend; ++i) {
-    if (i > 0) {
-      ierr = MatSetValue(A,i,i-1,-1.0,INSERT_VALUES); CHKERRQ(ierr);
-    }
-    if (i < n-1) {
-      ierr = MatSetValue(A,i,i+1,-1.0,INSERT_VALUES); CHKERRQ(ierr);
-    }
-    ierr = MatSetValue(A,i,i,2.0,INSERT_VALUES); CHKERRQ(ierr);
-  }
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatLoad(A, viewerA); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewerA); CHKERRQ(ierr);
 
   Mat B;
-  ierr = MatCreate(PETSC_COMM_WORLD,&B); CHKERRQ(ierr);
-  ierr = MatSetSizes(B,PETSC_DECIDE,PETSC_DECIDE,n,n); CHKERRQ(ierr);
+  PetscViewer viewerB;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, fileB, FILE_MODE_READ, &viewerB); CHKERRQ(ierr);
+  ierr = MatCreate(PETSC_COMM_WORLD, &B); CHKERRQ(ierr);
   ierr = MatSetFromOptions(B); CHKERRQ(ierr);
-  ierr = MatSetUp(B); CHKERRQ(ierr);
+  ierr = MatLoad(B, viewerB); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewerB); CHKERRQ(ierr);  EPS eps;
 
-  ierr = MatGetOwnershipRange(B,&Istart,&Iend); CHKERRQ(ierr);
-  for (PetscInt i = Istart; i < Iend; ++i) {
-    ierr = MatSetValue(B, i, i, 2.0/3.0, INSERT_VALUES); CHKERRQ(ierr);
-    if (i > 0) {
-      ierr = MatSetValue(B, i, i-1, 1.0/6.0, INSERT_VALUES); CHKERRQ(ierr);
-    }
-    if (i < n-1) {
-      ierr = MatSetValue(B, i, i+1, 1.0/6.0, INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
-  ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  EPS eps;
   ierr = EPSCreate(PETSC_COMM_WORLD, &eps); CHKERRQ(ierr);
   ierr = EPSSetOperators(eps, A, B); CHKERRQ(ierr);
   ierr = EPSSetProblemType(eps, EPS_GHEP); CHKERRQ(ierr);

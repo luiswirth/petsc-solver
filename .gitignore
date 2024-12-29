@@ -1,3 +1,6 @@
 .cache/
 compile_commands.json
-ex1
+solve
+gen
+*.bin
+*.bin.info

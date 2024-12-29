@@ -1,7 +1,11 @@
-default: ex1
+default: solve
 
 include ${SLEPC_DIR}/lib/slepc/conf/slepc_common
 
-ex1: ex1.o
-	-${CLINKER} -o ex1 ex1.o ${SLEPC_EPS_LIB}
-	${RM} ex1.o
+solve: solve.o
+	-${CLINKER} -o solve solve.o ${SLEPC_EPS_LIB}
+	${RM} solve.o
+
+gen: gen.o
+	-${CLINKER} -o gen gen.o ${SLEPC_EPS_LIB}
+	${RM} gen.o
