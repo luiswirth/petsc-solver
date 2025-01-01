@@ -1,6 +1,7 @@
+#include "petscsys.h"
 #include <slepceps.h>
 
-static char help[] = "Generalized Hermitian Eigenvalue Problem (GHEP).\n";
+static char help[] = "Generalized Hermitian Indefinite Eigenvalue Problem (GHIEP).\n";
 
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
@@ -24,7 +25,7 @@ int main(int argc, char **argv) {
   EPS eps;
   ierr = EPSCreate(PETSC_COMM_WORLD, &eps); CHKERRQ(ierr);
   ierr = EPSSetOperators(eps, A, B); CHKERRQ(ierr);
-  ierr = EPSSetProblemType(eps, EPS_GHEP); CHKERRQ(ierr);
+  ierr = EPSSetProblemType(eps, EPS_GHIEP); CHKERRQ(ierr);
   ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
   ierr = EPSSolve(eps); CHKERRQ(ierr);
 

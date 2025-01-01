@@ -1,6 +1,3 @@
 .cache/
 compile_commands.json
-solve
-gen
-*.bin
-*.bin.info
+ghiep
